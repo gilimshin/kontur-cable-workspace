@@ -1,0 +1,7 @@
+**/.local/
+**/.env*
+**/data/
+**/preview.jpg
+**/__pycache__/
+**/tests/
+**/scripts/
