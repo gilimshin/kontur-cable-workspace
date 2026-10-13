@@ -1,0 +1,10 @@
+data/
+.local/
+.env*
+preview.jpg
+__pycache__/
+test_server.py
+server.py
+import_source.py
+scripts/
+tests/

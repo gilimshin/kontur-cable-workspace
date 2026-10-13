@@ -1,0 +1,8 @@
+.DS_Store
+**/.env*
+**/node_modules/
+**/.vercel/
+**/.local/
+**/data/
+**/__pycache__/
+**/preview.jpg

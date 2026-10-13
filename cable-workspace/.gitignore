@@ -1,0 +1,7 @@
+data/
+__pycache__/
+node_modules/
+.env*
+preview.jpg
+.local/
+.vercel
