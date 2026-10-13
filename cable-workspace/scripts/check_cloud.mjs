@@ -1,0 +1,24 @@
+// Read-only production smoke check. Never prints credentials or project contents.
+import {readFileSync} from 'node:fs';
+import assert from 'node:assert/strict';
+const access=JSON.parse(readFileSync(new URL('../.local/site-access.json',import.meta.url),'utf8'));
+const base=access.url;
+let r=await fetch(base+'/api/projects');
+assert.equal(r.status,401,'Unauthenticated requests must be denied');
+r=await fetch(base+'/api/login',{method:'POST',headers:{'Content-Type':'application/json',Origin:base},body:JSON.stringify({password:'incorrect-password'})});
+assert.equal(r.status,401,'Wrong password must be denied');
+r=await fetch(base+'/api/login',{method:'POST',headers:{'Content-Type':'application/json',Origin:base},body:JSON.stringify({password:access.password})});
+assert.equal(r.status,200,'Login failed');
+const setCookie=r.headers.get('set-cookie');
+assert.match(setCookie,/HttpOnly/i);assert.match(setCookie,/Secure/i);assert.match(setCookie,/SameSite=Strict/i);
+const cookie=setCookie.split(';')[0];
+r=await fetch(base+'/api/projects',{headers:{Cookie:cookie}});
+assert.equal(r.status,200,'Authenticated data unavailable');
+const projects=await r.json();
+const p=projects.find(x=>x.id==='dubninskaya');assert.ok(p,'Imported project missing');assert.equal(p.cables.length,8);assert.equal(p.catalog.length,62);
+const length=p.cables.reduce((s,c)=>s+Math.round(c.ground*1.02+c.hdd+c.pipe*1.01+c.entry),0);
+assert.equal(length,2254);
+r=await fetch(base+'/api/events/'+p.id,{headers:{Cookie:cookie}});assert.equal(r.status,200);const events=await r.json();assert.ok(events.length);
+r=await fetch(base+'/api/projects',{method:'PUT',headers:{Cookie:cookie,'Content-Type':'application/json',Origin:base},body:JSON.stringify({project:p,actor:'Проверка подключения'})});
+assert.equal(r.status,200,'No-op save failed');assert.equal((await r.json()).revision,p.revision);
+console.log(JSON.stringify({unauthenticated:'denied',wrongPassword:'denied',login:'ok',projects:projects.length,cables:p.cables.length,materials:p.materials.length,stages:p.dates.length,sheets:p.catalog.length,totalLength:length,history:'ok',save:'ok'},null,2));

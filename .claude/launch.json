@@ -1,0 +1,13 @@
+﻿{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "profenergo",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["cable-workspace/server.py"],
+      "port": 8765,
+      "url": "http://127.0.0.1:8765"
+    }
+  ]
+}
+
