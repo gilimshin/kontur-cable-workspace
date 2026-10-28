@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Расчёт КЛ по исполнительному чертежу</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="/logo.png">
+<style>
+  :root{
+    --bg:#f4f5f7; --panel:#fff; --ink:#1d2330; --muted:#677084; --line:#e2e5eb;
+    --ground:#d7262b; --pipe:#1f5fd6; --gnb:#0b8f8a; --ok:#1d8a4a; --warn:#b26a00; --err:#c22d2d;
+    --accent:#1f5fd6;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 "Segoe UI",system-ui,-apple-system,sans-serif}
+  header{display:flex;align-items:center;gap:16px;padding:14px 20px;background:var(--panel);border-bottom:1px solid var(--line);flex-wrap:wrap}
+  header h1{font-size:17px;margin:0;font-weight:600}
+  header .sub{color:var(--muted);font-size:13px}
+  main{padding:16px 20px;display:grid;gap:16px;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr)}
+  @media (max-width:1100px){main{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;min-width:0}
+  .card h2{font-size:14px;margin:0 0 10px;font-weight:600;display:flex;align-items:center;gap:8px}
+  .drop{border:2px dashed #b9c2d3;border-radius:10px;padding:26px;text-align:center;color:var(--muted);cursor:pointer;transition:.15s}
+  .drop.over{border-color:var(--accent);background:#eef3ff;color:var(--ink)}
+  .drop b{color:var(--ink)}
+  .params{display:flex;gap:14px;flex-wrap:wrap;margin-top:12px;align-items:end}
+  .params label{display:flex;flex-direction:column;font-size:12px;color:var(--muted);gap:3px}
+  input[type=number]{width:78px;padding:5px 7px;border:1px solid #cfd5df;border-radius:6px;font:inherit}
+  button{font:inherit;padding:7px 14px;border-radius:7px;border:1px solid var(--accent);background:var(--accent);color:#fff;cursor:pointer}
+  button.ghost{background:#fff;color:var(--accent)}
+  button:disabled{opacity:.5;cursor:default}
+  #viewer{position:relative;height:640px;overflow:hidden;border:1px solid var(--line);border-radius:8px;background:#fff;cursor:grab}
+  #viewer.drag{cursor:grabbing}
+  #stage{position:absolute;left:0;top:0;transform-origin:0 0}
+  #stage img,#stage svg{position:absolute;left:0;top:0;user-select:none;-webkit-user-drag:none}
+  .legend{display:flex;gap:14px;font-size:12px;color:var(--muted);margin:8px 0 0;flex-wrap:wrap}
+  .legend i{display:inline-block;width:18px;height:4px;border-radius:2px;margin-right:5px;vertical-align:middle}
+  .tools{display:flex;gap:8px;margin-left:auto}
+  .tools button{padding:3px 10px;font-size:12px}
+  table{border-collapse:collapse;width:100%;font-size:13px}
+  th,td{border-bottom:1px solid var(--line);padding:6px 6px;text-align:left;vertical-align:top}
+  th{font-weight:600;color:var(--muted);font-size:12px;background:#fafbfc;position:sticky;top:0}
+  td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+  tr.sel td{background:#eef3ff}
+  tr.click{cursor:pointer}
+  tr.click:hover td{background:#f5f8ff}
+  .badge{display:inline-block;padding:1px 8px;border-radius:20px;font-size:12px;font-weight:600;white-space:nowrap}
+  .b-ok{background:#e3f4ea;color:var(--ok)} .b-warn{background:#fff1dc;color:var(--warn)} .b-err{background:#fde4e4;color:var(--err)}
+  .steps{font-size:12px;color:var(--muted);line-height:1.7}
+  .steps span{display:inline-block;padding:0 6px;border-radius:4px;margin:1px 2px 1px 0;color:#fff}
+  .k-ground{background:var(--ground)} .k-pipe{background:var(--pipe)} .k-gnb{background:var(--gnb)}
+  .zav input{width:54px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media (max-width:700px){.grid2{grid-template-columns:1fr}}
+  .warn li{margin:2px 0}
+  .muted{color:var(--muted)}
+  .scroll{max-height:420px;overflow:auto}
+  .tip{position:fixed;pointer-events:none;background:#1d2330;color:#fff;font-size:12px;padding:4px 8px;border-radius:5px;display:none;z-index:9}
+  .full{grid-column:1/-1}
+  .err{color:var(--err);font-weight:600}
+  .spin{display:inline-block;width:14px;height:14px;border:2px solid #c7d2ea;border-top-color:var(--accent);border-radius:50%;animation:r .8s linear infinite;vertical-align:middle}
+  @keyframes r{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<header>
+  <a href="/" style="color:inherit;text-decoration:none;font-size:13px;margin-right:14px;opacity:.7">← Контур</a><h1>Кабельные линии — расчёт по исполнительному чертежу</h1>
+  <span class="sub" id="addr">Загрузите PDF исполнительного чертежа КЛ (векторный, из CAD)</span>
+</header>
+
+<main>
+  <section class="card full" id="uploadCard">
+    <div class="drop" id="drop"><b>Перетащите PDF сюда</b> или нажмите, чтобы выбрать файл
+      <div class="muted" style="margin-top:6px;font-size:12px">Красные линии — кабель в земле, синие — трубы и ГНБ. Маршрут каждой КЛ сверяется с длиной из спецификации чертежа.</div>
+    </div>
+    <input type="file" id="file" accept="application/pdf" hidden>
+    <div class="params">
+      <label>Заводка, начало (м)<input type="number" id="zf" value="5" step="0.5"></label>
+      <label>Заводка, конец (м)<input type="number" id="zt" value="5" step="0.5"></label>
+      <label>Коэф. в земле<input type="number" id="kg" value="1.02" step="0.01"></label>
+      <label>Коэф. в трубе<input type="number" id="kp" value="1.01" step="0.01"></label>
+      <span id="status" class="muted"></span>
+    </div>
+  </section>
+
+  <section class="card" id="drawCard" hidden>
+    <h2>Чертёж <span class="muted" style="font-weight:400" id="selInfo"></span>
+      <span class="tools"><button class="ghost" id="fit">Трасса</button><button class="ghost" id="allRoutes">Все КЛ</button></span></h2>
+    <div id="viewer"><div id="stage"><img id="bg" alt=""><svg id="ov"></svg></div></div>
+    <div class="legend"><span><i style="background:var(--ground)"></i>в земле</span><span><i style="background:var(--pipe)"></i>в трубе</span><span><i style="background:var(--gnb)"></i>ГНБ</span><span>колесо — масштаб, перетаскивание — сдвиг</span></div>
+  </section>
+
+  <section class="card" id="checkCard" hidden>
+    <h2>Сверка со спецификацией</h2>
+    <table id="cablesT"></table>
+    <div id="route" class="steps" style="margin-top:10px"></div>
+    <h2 style="margin-top:16px">Контрольные суммы</h2>
+    <table id="checksT"></table>
+    <div id="warnBox" style="margin-top:12px"></div>
+  </section>
+
+  <section class="card full" id="tableCard" hidden>
+    <h2>Таблица «кВ» <span class="tools"><button id="xlsx">Скачать Excel</button></span></h2>
+    <div class="scroll"><table id="kvT"></table></div>
+  </section>
+
+  <section class="card full" id="sumCard" hidden>
+    <div class="grid2">
+      <div><h2>Общие данные</h2><table id="sumT"></table></div>
+      <div><h2>Трубы (длина × количество)</h2><div id="pipesBox"></div></div>
+    </div>
+  </section>
+</main>
+<div class="tip" id="tip"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const KIND = {ground:'в земле', pipe:'в трубе', gnb:'ГНБ'};
+const COLOR = {ground:'var(--ground)', pipe:'var(--pipe)', gnb:'var(--gnb)'};
+let R = null, file = null, sel = null, view = {s:1, x:0, y:0}, renderScale = 1;
+const f2 = v => (v==null||v==='')?'':Number(v).toLocaleString('ru-RU',{minimumFractionDigits:2,maximumFractionDigits:2});
+
+// ---------- загрузка
+const drop = $('#drop'), inp = $('#file');
+drop.onclick = () => inp.click();
+drop.ondragover = e => {e.preventDefault(); drop.classList.add('over')};
+drop.ondragleave = () => drop.classList.remove('over');
+drop.ondrop = e => {e.preventDefault(); drop.classList.remove('over'); if (e.dataTransfer.files[0]) run(e.dataTransfer.files[0])};
+inp.onchange = () => inp.files[0] && run(inp.files[0]);
+['zf','zt','kg','kp'].forEach(id => $('#'+id).onchange = () => { if (R) { applyParams(); renderTable(); renderSummary(); } });
+
+async function run(f){
+  file = f;
+  $('#status').innerHTML = '<span class="spin"></span> Считаю «' + f.name + '»…';
+  const qs = new URLSearchParams({zav_from:$('#zf').value, zav_to:$('#zt').value, k_ground:$('#kg').value, k_pipe:$('#kp').value});
+  try{
+    const local = ['localhost','127.0.0.1'].includes(location.hostname);
+    if (!local && f.size > 4400000) throw new Error('файл больше 4 МБ — на сайте такой чертёж не принимается. Уменьшите PDF или посчитайте в локальной версии (start_kl.bat).');
+    const r = await fetch('/api/kl/parse?' + qs, {method:'POST', headers:{'Content-Type':'application/pdf'}, body:f});
+    if (r.status === 401) { $('#status').innerHTML = '<span class="err">Сначала войдите в <a href="/">Контур</a> по общему паролю, затем вернитесь на эту страницу.</span>'; return; }
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.error || j.detail || r.statusText);
+    R = j; sel = null;
+    const ok = R.cables.filter(c=>c.status==='ok').length;
+    $('#status').innerHTML = `Готово: ${f.name}. Совпало со спецификацией ${ok} из ${R.cables.length} КЛ.`;
+    $('#addr').textContent = R.address || f.name;
+    ['drawCard','checkCard','tableCard','sumCard'].forEach(id => $('#'+id).hidden = false);
+    renderChecks(); renderTable(); renderSummary();
+    renderPdf();
+  }catch(e){
+    $('#status').innerHTML = '<span class="err">Ошибка: ' + e.message + '</span>';
+  }
+}
+
+// ---------- чертёж
+function renderPdf(){
+  const im = R.image || {}, bg = $('#bg');
+  if (im.src){ bg.src = im.src; bg.style.left = im.x0+'px'; bg.style.top = im.y0+'px';
+    bg.style.width = (im.x1-im.x0)+'px'; bg.style.height = (im.y1-im.y0)+'px'; bg.hidden = false; }
+  else bg.hidden = true;
+  const ov = $('#ov');
+  ov.setAttribute('width', R.page.w); ov.setAttribute('height', R.page.h);
+  ov.setAttribute('viewBox', `0 0 ${R.page.w} ${R.page.h}`);
+  drawOverlay(); fit();
+}
+function drawOverlay(){
+  const ov = $('#ov');
+  const route = sel!=null ? new Set(R.cables[sel].steps.map(s=>[s.frm,s.to].sort().join('|'))) : null;
+  const [bx0,by0,bx1,by1] = R.bbox;
+  let h = `<rect x="${bx0}" y="${by0}" width="${bx1-bx0}" height="${by1-by0}" fill="#fff" opacity="0.5"/>`;
+  for (const s of R.spans){
+    const on = !route || route.has([s.a,s.b].sort().join('|'));
+    const d = 'M' + s.pts.map(p=>p[0].toFixed(2)+' '+p[1].toFixed(2)).join(' L');
+    h += `<path d="${d}" fill="none" stroke="${COLOR[s.kind]}" stroke-width="${on?2.6:1.2}" stroke-linecap="round" stroke-linejoin="round" opacity="${on?0.95:0.25}"
+            data-tip="т.${s.a} – т.${s.b}: ${s.len} м, ${KIND[s.kind]}${s.pipes?`, ${s.pipes} тр ${s.ptype||''} d=${s.d||'?'}`:''}${s.gnb?' ('+s.gnb+', Lпр)':''}"/>`;
+    h += `<path d="${d}" fill="none" stroke="transparent" stroke-width="7" data-tip="т.${s.a} – т.${s.b}: ${s.len} м, ${KIND[s.kind]}${s.pipes?`, ${s.pipes} тр ${s.ptype||''}`:''}"/>`;
+  }
+  const pts = route ? new Set(R.cables[sel].path) : null;
+  for (const [n,[x,y]] of Object.entries(R.points)){
+    const on = !pts || pts.has(n);
+    h += `<circle cx="${x}" cy="${y}" r="${on?1.8:1.1}" fill="#fff" stroke="#3b2a6b" stroke-width="0.6" opacity="${on?1:.4}"/>`;
+    if (on && pts) h += `<text x="${x+2.2}" y="${y-2.2}" font-size="5.5" font-weight="700" fill="#3b2a6b" style="paint-order:stroke" stroke="#fff" stroke-width="1.6">${n}</text>`;
+  }
+  ov.innerHTML = h;
+}
+// подсказки
+const tip = $('#tip');
+$('#ov').addEventListener('mousemove', e => {
+  const t = e.target.getAttribute && e.target.getAttribute('data-tip');
+  if (t){ tip.style.display='block'; tip.textContent=t; tip.style.left=e.clientX+12+'px'; tip.style.top=e.clientY+12+'px'; }
+  else tip.style.display='none';
+});
+$('#ov').addEventListener('mouseleave', ()=> tip.style.display='none');
+// масштаб/сдвиг
+const viewer = $('#viewer'), stage = $('#stage');
+function apply(){ stage.style.transform = `translate(${view.x}px,${view.y}px) scale(${view.s})`; }
+function fitBox(x0,y0,x1,y1){
+  const W = viewer.clientWidth, H = viewer.clientHeight;
+  const s = Math.min(W/(x1-x0), H/(y1-y0))*0.96;
+  view = {s, x:(W-(x1-x0)*s)/2 - x0*s, y:(H-(y1-y0)*s)/2 - y0*s}; apply();
+}
+function fit(){
+  if (sel!=null){
+    const ps = R.cables[sel].path.map(n=>R.points[n]).filter(Boolean);
+    const xs = ps.map(p=>p[0]), ys = ps.map(p=>p[1]);
+    return fitBox(Math.min(...xs)-25, Math.min(...ys)-25, Math.max(...xs)+25, Math.max(...ys)+25);
+  }
+  const [x0,y0,x1,y1] = R.bbox; fitBox(x0+30,y0+30,x1-30,y1-30);
+}
+$('#fit').onclick = fit;
+$('#allRoutes').onclick = () => { sel=null; drawOverlay(); renderChecks(); fit(); };
+viewer.addEventListener('wheel', e => {
+  e.preventDefault();
+  const r = viewer.getBoundingClientRect(), mx = e.clientX-r.left, my = e.clientY-r.top;
+  const k = e.deltaY<0 ? 1.15 : 1/1.15;
+  view.x = mx - (mx-view.x)*k; view.y = my - (my-view.y)*k; view.s *= k; apply();
+}, {passive:false});
+let dragging=null;
+viewer.onmousedown = e => { e.preventDefault(); dragging={x:e.clientX-view.x, y:e.clientY-view.y}; viewer.classList.add('drag'); };
+window.onmouseup = () => { dragging=null; viewer.classList.remove('drag'); };
+window.onmousemove = e => { if(dragging){ view.x=e.clientX-dragging.x; view.y=e.clientY-dragging.y; apply(); } };
+
+// ---------- сверка
+function badge(c){
+  if (c.status==='ok') return `<span class="badge b-ok">✓ совпадает</span>`;
+  if (c.status==='ambiguous') return `<span class="badge b-warn">выбрать маршрут</span>`;
+  if (c.status==='mismatch') return `<span class="badge b-warn">${c.diff>0?'+':''}${f2(c.diff)} м</span>`;
+  if (c.status==='nospec') return `<span class="badge b-warn">нет спецификации</span>`;
+  return `<span class="badge b-err">ошибка</span>`;
+}
+function renderChecks(){
+  let h = '<tr><th>КЛ</th><th class="n">Спец., м</th><th class="n">Маршрут, м</th><th class="n">Земля</th><th class="n">ГНБ</th><th class="n">Труба</th><th></th></tr>';
+  R.cables.forEach((c,i) => {
+    h += `<tr class="click ${sel===i?'sel':''}" data-i="${i}"><td>${c.count}×  ${c.frm} <span class="muted">(т.${c.a})</span> → ${c.to} <span class="muted">(т.${c.b})</span></td>
+      <td class="n">${f2(c.spec_len)}</td><td class="n">${f2(c.route_len)}</td><td class="n">${f2(c.ground)}</td><td class="n">${f2(c.gnb)}</td><td class="n">${f2(c.pipe)}</td><td>${badge(c)}</td></tr>`;
+  });
+  $('#cablesT').innerHTML = h;
+  $('#cablesT').querySelectorAll('tr.click').forEach(tr => tr.onclick = () => selectCable(+tr.dataset.i));
+  const c = sel!=null ? R.cables[sel] : null;
+  $('#route').innerHTML = c ? `<b style="color:var(--ink)">Маршрут ${c.frm} → ${c.to}:</b> ` + (c.steps||[]).map(s=>`<span class="k-${s.kind}" title="${KIND[s.kind]}">т.${s.frm}–${s.to}: ${s.len}</span>`).join('') + (c.msg?`<div class="err" style="margin-top:6px">${c.msg}</div>`:'') : '<span class="muted">Нажмите на КЛ, чтобы увидеть её маршрут на чертеже и разбивку по участкам.</span>';
+  $('#selInfo').textContent = c ? `— ${c.frm} → ${c.to}` : '';
+  let ch = '<tr><th>Показатель</th><th class="n">На чертеже</th><th class="n">Расчёт</th><th></th></tr>';
+  for (const x of R.checks) ch += `<tr><td>${x.name}</td><td class="n">${f2(x.drawing)}</td><td class="n">${f2(x.calc)}</td><td>${x.ok?'<span class="badge b-ok">✓</span>':'<span class="badge b-warn">≠</span>'}</td></tr>`;
+  $('#checksT').innerHTML = ch;
+  $('#warnBox').innerHTML = R.warnings.length ? '<h2>Замечания</h2><ul class="warn muted">' + R.warnings.map(w=>`<li>${w}</li>`).join('') + '</ul>' : '';
+}
+function selectCable(i){ sel = (sel===i?null:i); renderChecks(); drawOverlay(); fit(); }
+
+// ---------- таблица кВ
+function applyParams(){
+  const kg = +$('#kg').value, kp = +$('#kp').value;
+  R.params.k_ground = kg; R.params.k_pipe = kp;
+  for (const r of R.table){ r.total = r.ground*kg + r.gnb + r.pipe*kp + (+r.zav_from) + (+r.zav_to); r.rounded = Math.round(r.total); }
+}
+function renderTable(){
+  applyParams();
+  let h = '<tr><th>Каб. журнал</th><th>Кабель</th><th>Сечение</th><th class="n">в земле</th><th class="n">в ГНБ (профиль)</th><th class="n">в трубе</th><th>Заводка</th><th class="n">Итоговая длина</th><th class="n">Округл.</th><th></th></tr>';
+  R.table.forEach((r,i) => {
+    h += `<tr><td>${r.name}</td><td>${r.mark}</td><td>${r.section}</td><td class="n" title="${r.ground_parts.join(' + ')}">${f2(r.ground)}</td>
+      <td class="n">${f2(r.gnb)}</td><td class="n" title="${r.pipe_parts.join(' + ')}">${f2(r.pipe)}</td>
+      <td class="zav"><input type="number" step="0.5" value="${r.zav_from}" data-i="${i}" data-k="zav_from"> + <input type="number" step="0.5" value="${r.zav_to}" data-i="${i}" data-k="zav_to"></td>
+      <td class="n">${r.total.toFixed(4).replace('.',',')}</td><td class="n"><b>${r.rounded}</b></td><td>${badge(R.cables[r.cable])}</td></tr>`;
+  });
+  const sum = R.table.reduce((a,r)=>a+r.rounded,0), g = R.table.reduce((a,r)=>a+r.ground,0);
+  h += `<tr><td colspan="3"><b>Итого</b></td><td class="n">${f2(g)}</td><td></td><td></td><td></td><td></td><td class="n"><b>${sum}</b></td><td></td></tr>`;
+  $('#kvT').innerHTML = h;
+  $('#kvT').querySelectorAll('input').forEach(inp => inp.onchange = () => { R.table[+inp.dataset.i][inp.dataset.k] = +inp.value; renderTable(); renderSummary(); });
+}
+function renderSummary(){
+  const s = R.summary;
+  const rows = [['L без ГНБ (траншея по исп.)', s.trench_no_gnb], ['Траншея без труб (в земле)', s.trench_ground], ['Участки в трубах', s.trench_pipe], ['ГНБ (по профилю)', s.gnb_prof]];
+  for (const [k,v] of Object.entries(s.pipes)) rows.push([k+', всего труб', v.total]);
+  rows.push(['Кол-во КЛ', R.table.length]); rows.push(['Кабель итого (округл.)', R.table.reduce((a,r)=>a+r.rounded,0)]);
+  $('#sumT').innerHTML = rows.map(([k,v]) => `<tr><td>${k}</td><td class="n">${typeof v==='number' && !Number.isInteger(v)?f2(v):v}</td></tr>`).join('');
+  let p = '';
+  for (const [k,v] of Object.entries(s.pipes)){
+    p += `<table style="margin-bottom:12px"><tr><th>${k}</th><th class="n">Длина</th><th class="n">Кол-во</th><th class="n">Общая длина</th></tr>` +
+      v.rows.map(r=>`<tr><td class="muted">${r.span}</td><td class="n">${f2(r.len)}</td><td class="n">${r.count||'<span class="err">?</span>'}</td><td class="n">${f2(r.total)}</td></tr>`).join('') +
+      `<tr><td colspan="3"><b>Итого</b></td><td class="n"><b>${f2(v.total)}</b></td></tr></table>`;
+  }
+  $('#pipesBox').innerHTML = p || '<span class="muted">Трубы не найдены</span>';
+}
+$('#xlsx').onclick = async () => {
+  const r = await fetch('/api/kl/excel', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({result:R, rows:R.table})});
+  if (!r.ok) { alert('Не удалось сформировать Excel'); return; }
+  const b = await r.blob(), a = document.createElement('a');
+  a.href = URL.createObjectURL(b); a.download = (file?.name||'KL').replace(/\.pdf$/i,'') + ' — расчёт КЛ.xlsx'; a.click();
+};
+</script>
+</body>
+</html>
