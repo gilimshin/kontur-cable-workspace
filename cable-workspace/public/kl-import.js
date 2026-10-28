@@ -44,7 +44,9 @@ export function openKlImport({modal, notify, project, onApply}) {
     const qs = new URLSearchParams({zav_from:$('#kl-zf').value, zav_to:$('#kl-zt').value, k_ground:$('#kl-kg').value, k_pipe:$('#kl-kp').value});
     try {
       const h = await fetch('/api/kl/health').then(x => x.ok ? x.json() : null).catch(() => null);
-      if (!h) throw new Error('Сервер запущен в старой версии или не отвечает. Закройте окно сервиса и запустите start_kl.bat в папке cable-workspace, затем обновите страницу.');
+      const local = ['localhost','127.0.0.1'].includes(location.hostname);
+      if (!h) throw new Error(local ? 'Сервер запущен в старой версии или не отвечает. Закройте окно сервиса и запустите start_kl.bat в папке cable-workspace, затем обновите страницу.' : 'Расчёт по чертежу на сайте временно недоступен. Обновите страницу и попробуйте ещё раз.');
+      if (h.maxPdf && f.size > h.maxPdf) throw new Error('Файл больше 4 МБ — на сайте такой чертёж не принимается. Уменьшите PDF или посчитайте в локальной версии (start_kl.bat).');
       if (!h.kl) throw new Error(h.error || 'Не установлены библиотеки для чтения PDF. Запустите start_kl.bat.');
       const r = await fetch('/api/kl/parse?' + qs, {method:'POST', headers:{'Content-Type':'application/pdf'}, body:f});
       const j = await r.json();

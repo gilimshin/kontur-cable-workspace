@@ -3,12 +3,46 @@
   "framework": null,
   "outputDirectory": "public",
   "buildCommand": "npm run build",
-  "rewrites": [{"source":"/api/:path*","destination":"/api/workspace?route=:path*"}],
-  "functions": { "api/workspace.js": {"maxDuration":30} },
-  "headers": [{"source":"/(.*)","headers":[
-    {"key":"X-Content-Type-Options","value":"nosniff"},
-    {"key":"X-Frame-Options","value":"DENY"},
-    {"key":"Referrer-Policy","value":"same-origin"},
-    {"key":"X-Robots-Tag","value":"noindex, nofollow"}
-  ]}]
+  "rewrites": [
+    {
+      "source": "/api/kl/:route",
+      "destination": "/api/kl?route=:route"
+    },
+    {
+      "source": "/api/:path*",
+      "destination": "/api/workspace?route=:path*"
+    }
+  ],
+  "functions": {
+    "api/workspace.js": {
+      "maxDuration": 30
+    },
+    "api/kl.py": {
+      "maxDuration": 60,
+      "includeFiles": "kl_calc/**"
+    }
+  },
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "same-origin"
+        },
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        }
+      ]
+    }
+  ]
 }

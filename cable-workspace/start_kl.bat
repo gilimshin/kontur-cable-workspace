@@ -4,8 +4,8 @@ cd /d "%~dp0"
 set LOG=%~dp0start_kl.log
 echo ==== %date% %time% ==== > "%LOG%"
 
-set PY=python
-where python >nul 2>&1 || set PY=py
+set PY=py
+py --version >nul 2>&1 || set PY=python
 echo Python: %PY% >> "%LOG%"
 %PY% --version >> "%LOG%" 2>&1
 if errorlevel 1 (

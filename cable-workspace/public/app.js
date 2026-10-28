@@ -1,4 +1,4 @@
-import { openKlImport } from './kl-import.js?v=2';
+import { openKlImport } from './kl-import.js?v=3';
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt = n => new Intl.NumberFormat('ru-RU',{maximumFractionDigits:2}).format(n);
