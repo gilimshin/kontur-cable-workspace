@@ -73,6 +73,21 @@ class Handler(SimpleHTTPRequestHandler):
     def do_POST(self):
         if urlparse(self.path).path.startswith('/api/kl/'): return self.kl()
         self.save(True)
+    def do_DELETE(self):
+        if urlparse(self.path).path!='/api/projects': return self.response(404,{'error':'Не найдено'})
+        try:
+            size=int(self.headers.get('Content-Length','0'))
+            if size>2_000_000: return self.response(413,{'error':'Слишком большой запрос'})
+            project_id=json.loads(self.rfile.read(size) or b'{}').get('id')
+            if not isinstance(project_id,str) or not project_id: return self.response(400,{'error':'Не указан объект для удаления'})
+            with connect() as db:
+                db.execute('BEGIN IMMEDIATE')
+                deleted=db.execute('DELETE FROM projects WHERE id=?',(project_id,)).rowcount
+                if not deleted: return self.response(404,{'error':'Объект не найден'})
+                db.execute('DELETE FROM events WHERE project=?',(project_id,))
+            return self.response(200,{'ok':True,'id':project_id})
+        except (ValueError,TypeError) as e:
+            return self.response(400,{'error':str(e)})
     def kl(self):
         from urllib.parse import parse_qs
         if self.headers.get('Origin') and self.headers['Origin'] not in ['http://127.0.0.1:8765','http://localhost:8765']: return self.response(403,{'error':'Недопустимый источник запроса'})
