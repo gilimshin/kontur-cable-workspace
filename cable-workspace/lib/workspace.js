@@ -40,7 +40,16 @@ export function validate(p) {
 export function changeProject(state,input,actor,create) {
   const p=structuredClone(input);validate(p);
   let action='Создан объект';
-  if(create) {p.id=randomUUID();p.revision=1;}
+  if(create) {
+    p.id=typeof p.id==='string'&&p.id?p.id:randomUUID();
+    const existing=state.projects.find(x=>x.id===p.id);
+    if(existing) {
+      const keys=new Set([...Object.keys(p),...Object.keys(existing)].filter(k=>k!=='revision'));
+      if([...keys].some(k=>JSON.stringify(p[k])!==JSON.stringify(existing[k])))throw new UserError(409,'Этот запрос уже создал объект с другими данными. Обновите список объектов.');
+      return {project:existing,changed:false};
+    }
+    p.revision=1;
+  }
   else {
     const previous=state.projects.find(x=>x.id===p.id);
     if(!previous)throw new UserError(404,'Объект не найден');
