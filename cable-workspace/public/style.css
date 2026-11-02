@@ -6,6 +6,114 @@
 @media print{body{background:#fff}#app,#toast,.close,.print-tools{display:none!important}dialog[open]{position:static;display:block;border:0;box-shadow:none;max-width:none;width:100%;max-height:none;padding:0;overflow:visible}dialog::backdrop{background:none}.print-document{font-family:Georgia,serif}.print-document table{font-size:10pt}.print-document th,.print-document td{border:1px solid #888;padding:7px}tr{break-inside:avoid}@page{size:A4;margin:18mm}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
 
+/* Unslop pass: спокойная инженерная палитра, читаемый ритм и маршрут комплекта */
+:root{--line:#e3e7e4;--muted:#68736d;--green:#256b51;color:#25302b;background:#f5f7f6}
+body{font-size:14px;color:#25302b;font-variant-numeric:tabular-nums}
+aside{width:248px;padding:28px 16px 16px;background:#fff}
+.brand{gap:8px;padding:0 8px}
+.workspace-label,.nav-label{font-size:12px;font-weight:500;letter-spacing:0;text-transform:none;color:#68736d;margin:32px 10px 8px}
+.workspace{min-height:56px;padding:8px;gap:8px;border-color:#e3e7e4;border-radius:8px;font-size:13px;font-weight:500}
+.project-symbol{width:36px;height:36px;border-radius:6px;background:#f1f4f2}
+.workspace small,.profile small{font-size:12px;margin-top:4px}
+.nav-label{margin-top:28px}
+nav{gap:4px}
+.nav{min-height:36px;gap:10px;padding:6px 10px;border-radius:8px;font-size:13px;color:#59655e;transition:background-color .15s,color .15s}
+.nav:hover{background:#f4f6f4}
+.nav.active{background:#edf3ef;color:#205d45;font-weight:550;box-shadow:inset 0 0 0 1px #e3ebe5}
+.nav-icon{display:block;width:18px;height:18px;flex:0 0 18px;line-height:1;color:currentColor;stroke:currentColor;stroke-width:1.6;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.count{font-size:12px;background:#f0f3f1;color:#53645a;border-radius:5px;padding:2px 7px;font-variant-numeric:tabular-nums}
+.estimate-link{margin-top:4px}
+.external-mark{margin-left:auto;color:#87928b;font-size:14px}
+.local-state{font-size:12px;gap:8px;padding:16px 10px}
+.profile{padding:12px 3px 0;gap:10px;font-size:13px}
+.profile small{font-size:12px}
+main{margin-left:248px}
+header{height:64px;padding:0 32px}
+.breadcrumb{gap:10px;font-size:13px}
+.top-actions{gap:12px}
+.top-actions>span{font-size:12px}
+.button{min-height:36px;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:500;transition:background-color .15s,border-color .15s,color .15s}
+.button.primary{background:#256b51;border-color:#256b51}
+.button.primary:hover{background:#1d573f;border-color:#1d573f}
+.page{padding:32px;max-width:1600px}
+.page-heading{align-items:flex-end;margin-bottom:28px}
+.eyebrow{font-size:12px;letter-spacing:0;text-transform:none;font-weight:400;color:#68736d;margin-bottom:8px}
+h1{font-size:32px;letter-spacing:-.5px;font-weight:500;margin-bottom:8px;line-height:1.2}
+.page-heading p{font-size:14px;color:#59655e}
+.status{font-size:12px;border-color:#dce6df;background:#f0f5f1;color:#315f46;border-radius:6px;padding:7px 10px;white-space:nowrap}
+.status i{width:6px;height:6px;background:#4f8964}
+.metrics{border-radius:12px;padding:20px 0;margin-bottom:24px;box-shadow:0 1px 2px #17251b08}
+.metrics>div{padding:0 20px}
+.metrics span{font-size:13px;color:#59655e}
+.metrics strong{font-size:32px;font-weight:500;letter-spacing:-.5px;margin:12px 0 8px;line-height:1;font-variant-numeric:tabular-nums}
+.metrics small{font-size:13px;color:#68736d;margin-left:8px}
+.metrics p{font-size:12px;color:#68736d;line-height:1.5}
+.amber{color:#986a2c}
+.overview-grid{gap:20px}
+.panel{border-radius:12px;padding:24px;box-shadow:0 1px 2px #17251b08}
+.section-title{margin-bottom:16px}
+h2{font-size:16px;font-weight:550}
+.text-button{font-size:13px;font-weight:500}
+.project-description{font-size:13px;color:#59655e;line-height:1.6;margin-bottom:16px}
+.workflow{position:relative}
+.workflow::before{content:"";position:absolute;z-index:0;left:15px;top:32px;bottom:32px;width:1px;background:#dce5df}
+.workflow button{position:relative;z-index:1;gap:12px;padding:12px 0;min-height:60px;background:transparent}
+.workflow button:hover{background:#f8faf8}
+.step{width:32px;height:32px;flex:0 0 32px;background:#fff;border:1px solid #dce5df;border-radius:50%;font-size:12px;color:#426c51;font-variant-numeric:tabular-nums}
+.workflow strong{font-size:14px;font-weight:500}
+.workflow small{font-size:12px;color:#68736d;margin-top:4px}
+.arrow{font-size:14px}
+.source-note{margin-top:16px;padding:12px;background:#f5f7f5;border:1px solid #e8ece9;border-radius:8px;font-size:12px;line-height:1.6;color:#59655e}
+.badge{background:#f7f2e8;color:#8c642d;padding:4px 8px;border-radius:5px;font-size:12px}
+.issue{gap:12px;padding:16px 0}
+.issue-icon{width:22px;height:22px;background:#f7f2e8;color:#8c642d;font-size:12px}
+.issue strong{font-size:13px;font-weight:500}
+.issue small{font-size:12px;color:#59655e;margin-top:5px;line-height:1.5}
+.muted-note{font-size:12px;color:#68736d;line-height:1.6;margin-top:16px}
+.notes{margin-top:20px}
+.muted{font-size:13px;color:#68736d;line-height:1.5}
+#note-form{gap:8px}
+.note{gap:12px;margin-top:16px;padding-top:16px}
+.note strong{font-size:13px;font-weight:500}
+.note small{font-size:12px;margin-left:8px}
+.note p{font-size:13px;line-height:1.5}
+input,textarea,select{color:#25302b;border-color:#dce3de;padding:9px 11px;border-radius:8px;font-size:13px}
+input::placeholder{color:#75817a}
+label{font-size:13px;color:#536159}
+label input,label textarea,label select{margin-top:8px}
+.form-grid{gap:20px}
+.table-tools{margin-bottom:16px}
+th{font-size:12px;color:#59655e;padding:12px 10px}
+td{padding:10px 8px}
+td input[type=number]{font-variant-numeric:tabular-nums}
+.formula-note{margin-top:16px;padding:12px 14px;border-radius:8px;font-size:12px;color:#59655e;line-height:1.6}
+.info-banner{gap:12px;padding:16px 20px;border-radius:8px;font-size:13px}
+.info-banner p{font-size:12px;line-height:1.5;margin-top:4px}
+.document-row{gap:12px;padding:16px 0}
+.doc-icon{padding:8px;border-radius:8px}
+.document-row strong{font-size:14px;font-weight:500}
+.document-row small{font-size:12px;margin-top:4px}
+.draft-badge{border-radius:5px;font-size:12px;padding:5px 8px}
+.sheet-list{gap:8px}
+.sheet-list>span{border-radius:6px;padding:7px 8px;font-size:12px}
+.sheet-list small{font-size:11px}
+.event{gap:12px;padding:16px 0}
+.event strong{font-size:13px;font-weight:500}
+.event p{font-size:12px;margin-top:4px}
+.event time{font-size:12px}
+footer{padding:16px 32px;color:#68736d;font-size:12px}
+dialog{border-radius:14px;padding:28px;box-shadow:0 8px 24px #17251b14;color:#25302b}
+dialog::backdrop{background:#17251b55;backdrop-filter:blur(2px)}
+dialog>p{font-size:14px;color:#59655e;line-height:1.6}
+dialog>label,dialog form>label{margin:16px 0}
+dialog h2{font-size:20px}
+.project-options small{color:#68736d;font-size:12px;margin:4px 0}
+.loading{padding:48px;color:#59655e}
+#toast{font-size:13px;border-radius:8px;transition:opacity .18s,transform .18s}
+@media(max-width:1100px){aside{width:220px}main{margin-left:220px}.page{padding:24px}.overview-grid{gap:16px}.panel{padding:20px}.metrics>div{padding:0 12px}}
+@media(max-width:720px){.page{padding:20px 16px}header{padding:0 16px}.page-heading{margin-bottom:20px}.eyebrow{font-size:12px}h1{font-size:26px}.overview-grid{gap:16px}.panel{padding:16px}.metrics{padding:16px 0}.metrics>div{padding:0 16px}.metrics span,.metrics p{font-size:12px}.metrics strong{font-size:28px}footer{padding:16px}.top-actions{gap:8px}}
+@media(max-width:720px){aside{position:static;width:100%;padding:16px;border-right:0;border-bottom:1px solid var(--line)}main{margin-left:0}}
+
 /* Расчёт КЛ по исполнительному чертежу */
 .kl-toolbar{display:flex;gap:10px;align-items:center}dialog.kl-wide{width:1400px}
 .kl-drop{border:2px dashed #c9d6cd;border-radius:9px;padding:22px;text-align:center;color:var(--muted);cursor:pointer;font-size:12px;margin:16px 0 0}.kl-drop b{color:#27332f}.kl-drop.over{border-color:var(--green);background:#eef5f0}
