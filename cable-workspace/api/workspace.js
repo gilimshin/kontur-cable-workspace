@@ -1,13 +1,12 @@
-import { get, put, BlobPreconditionFailedError } from '@vercel/blob';
+import { BlobPreconditionFailedError } from '@vercel/blob';
 import { randomUUID } from 'node:crypto';
 import { equalSecret, sessionToken, validSession, changeProject, UserError } from '../lib/workspace.js';
 
-const FILE='kontur/workspace.json';
+import { workspaceStorage } from '../lib/storage.js';
+const {readWorkspace,writeWorkspace}=workspaceStorage();
 function reply(res,status,data){res.statusCode=status;res.setHeader('Content-Type','application/json; charset=utf-8');res.setHeader('Cache-Control','private, no-store');res.end(JSON.stringify(data));}
 function isBlobConflict(e){return e instanceof BlobPreconditionFailedError||e?.name==='BlobAlreadyExistsError';}
 function waitBeforeRetry(attempt){return new Promise(resolve=>setTimeout(resolve,Math.min(1500,75*2**attempt)+Math.random()*100));}
-async function readWorkspace(){const stored=await get(FILE,{access:'private',useCache:false});return {stored,state:stored?await new Response(stored.stream).json():{projects:[],events:[]}};}
-async function writeWorkspace(stored,state){const data=JSON.stringify(state);if(Buffer.byteLength(data)>8_000_000)throw new UserError(413,'Хранилище MVP достигло лимита 8 МБ. Нужна миграция базы.');await put(FILE,data,{access:'private',addRandomSuffix:false,contentType:'application/json',cacheControlMaxAge:60,...(stored?{ifMatch:stored.blob.etag}:{allowOverwrite:false})});}
 export default async function handler(req,res) {
   const password=process.env.WORKSPACE_PASSWORD;
   if(!password || password.length<24)return reply(res,503,{error:'Доступ ещё не настроен'});
